@@ -1,0 +1,23 @@
+# Python caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+
+# Project-excluded folders
+ANTIGRAVITY/
+antigravity/
+tests/
+
+# Pytest
+.pytest_cache/
+pytest.ini
