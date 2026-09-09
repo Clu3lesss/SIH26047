@@ -227,4 +227,5 @@ async def process_turn(session_id: str, message: str) -> IntakeResponse:
         state=state,
         next_question=next_question,
         red_flag=red_flag,
+        target_field=target.field,
     )

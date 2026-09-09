@@ -28,6 +28,18 @@ from microservice.piplines.pipeline2 import orchestrator as p2
 router = APIRouter()
 
 
+def _format_error(exc: Exception, pipeline_name: str) -> str:
+    msg = str(exc)
+    msg_lower = msg.lower()
+    if "mistral_api_key is not set" in msg_lower or "api_key" in msg_lower:
+        return "MISTRAL_API_KEY is missing or invalid in your .env file. Please add your key from console.mistral.ai."
+    if "429" in msg_lower or "rate limit" in msg_lower or "quota" in msg_lower:
+        return "Mistral AI rate limit reached. The service will retry automatically or you can wait a moment."
+    if "connection" in msg_lower or "timeout" in msg_lower or "connect" in msg_lower:
+        return f"Network error connecting to AI service: {msg}. Please check internet connection."
+    return f"{pipeline_name} error: {msg}"
+
+
 @router.post(
     "/intake",
     response_model=IntakeResponse,
@@ -53,9 +65,10 @@ async def intake(request: IntakeRequest) -> IntakeResponse:
             message=request.message,
         )
     except Exception as exc:
+        formatted = _format_error(exc, "Pipeline 1 (Intake)")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Pipeline 1 error: {exc}",
+            detail=formatted,
         ) from exc
 
 
@@ -79,7 +92,8 @@ async def summary(request: SummaryRequest) -> SummaryResponse:
     try:
         return await p2.generate_summary(state=request.state)
     except Exception as exc:
+        formatted = _format_error(exc, "Pipeline 2 (Summary)")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Pipeline 2 error: {exc}",
+            detail=formatted,
         ) from exc

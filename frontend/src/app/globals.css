@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Kiosk-specific: ensure all interactive elements have large touch targets */
+@layer utilities {
+  .touch-target {
+    @apply min-h-[56px] flex items-center justify-center;
+  }
+  .touch-target-lg {
+    @apply min-h-[72px] flex items-center justify-center;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for clinical panels */
+.clinical-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.clinical-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.clinical-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Print styles for physician summary */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    font-size: 12pt;
+    color: black;
+    background: white;
+  }
+}

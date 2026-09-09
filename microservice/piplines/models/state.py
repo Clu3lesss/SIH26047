@@ -232,6 +232,7 @@ class IntakeResponse(BaseModel):
     state: PatientHistoryState
     next_question: Optional[str] = None  # present when status == "in_progress"
     red_flag: RedFlagResult
+    target_field: Optional[str] = None
 
 
 class SummaryRequest(BaseModel):

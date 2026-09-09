@@ -1,0 +1,102 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Patient Demographics (Identity data captured once)
+model Patient {
+  id        String    @id @default(uuid())
+  name      String
+  age       Int
+  sex       String    // "male" | "female" | "other"
+  mobile    String?
+  abhaId    String?   @map("abha_id")
+  language  String    @default("en")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  sessions  Session[]
+
+  @@map("patients")
+}
+
+// 2. OPD Visit Session (One row per OPD visit)
+model Session {
+  id           String          @id // e.g. "OPD-20260908-1042"
+  patientId    String?         @map("patient_id")
+  tokenNumber  Int             @map("token_number")
+  status       String          @default("in_progress") // "in_progress" | "completed" | "consulted"
+  turnCount    Int             @default(0) @map("turn_count")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  completedAt  DateTime?       @map("completed_at")
+
+  patient      Patient?        @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  redFlags     RedFlag[]
+  history      HistorySummary?
+  documents    Document[]
+
+  @@map("sessions")
+}
+
+// 3. Emergency Triage Red Flags (Immediate clinical risks)
+model RedFlag {
+  id          String   @id @default(uuid())
+  sessionId   String   @map("session_id")
+  isFlagged   Boolean  @default(false) @map("is_flagged")
+  urgencyTier String?  @map("urgency_tier") // "low" | "medium" | "high"
+  reason      String?
+  flaggedAt   DateTime @default(now()) @map("flagged_at")
+  dismissed   Boolean  @default(false)
+
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("red_flags")
+}
+
+// 4. Clinical Structured History & AI Summary
+model HistorySummary {
+  id                String    @id @default(uuid())
+  sessionId         String    @unique @map("session_id")
+  
+  // Full JSON state mirroring PatientHistoryState
+  structuredState   Json      @map("structured_state")
+  
+  chiefComplaint    String?   @map("chief_complaint")
+  allergies         String[]  @default([])
+  medications       String[]  @default([])
+  conditions        String[]  @default([])
+  
+  // Pipeline 2 AI Prose Summary
+  proseSummary      Json?     @map("prose_summary")
+  
+  // Physician Review & Edits
+  physicianEdited   Boolean   @default(false) @map("physician_edited")
+  editedSummary     Json?     @map("edited_summary")
+  physicianApproved Boolean   @default(false) @map("physician_approved")
+  approvedAt        DateTime? @map("approved_at")
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  session           Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("history_summary")
+}
+
+// 5. Uploaded Prescriptions & Documents
+model Document {
+  id            String   @id @default(uuid())
+  sessionId     String   @map("session_id")
+  fileUrl       String   @map("file_url")
+  documentType  String   @default("prescription") @map("document_type")
+  ocrRawText    String?  @map("ocr_raw_text")
+  extractedData Json?    @map("extracted_data")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
