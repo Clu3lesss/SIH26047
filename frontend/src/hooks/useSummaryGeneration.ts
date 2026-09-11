@@ -10,6 +10,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { postSummary } from '@/lib/api';
 import { useDoctorStore } from '@/store/doctorStore';
+import { saveCompletedHistory } from '@/lib/actions/db';
 import type { PatientHistoryState } from '@/types/intake';
 
 export function useSummaryGeneration() {
@@ -23,8 +24,13 @@ export function useSummaryGeneration() {
       setSummaryLoading(sessionId, true);
     },
 
-    onSuccess: (response, { sessionId }) => {
+    onSuccess: (response, { sessionId, state }) => {
       setSummary(sessionId, response.summary);
+      if (response?.summary) {
+        saveCompletedHistory(sessionId, state, response.summary).catch((err) => {
+          console.warn('[Supabase Summary Save Notice]:', err);
+        });
+      }
     },
 
     onError: (error, { sessionId }) => {

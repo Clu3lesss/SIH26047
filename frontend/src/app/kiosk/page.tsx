@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useKioskStore } from '@/store/kioskStore';
+import { ChevronRight } from 'lucide-react';
 import { Header } from '@/components/common/Header';
 import { KioskWelcome } from '@/components/kiosk/KioskWelcome';
 import { KioskChatStream } from '@/components/kiosk/KioskChatStream';
@@ -17,7 +18,16 @@ const STEP_LABELS = [
 ];
 
 export default function KioskPage() {
-  const { step } = useKioskStore();
+  const { step, patient, sessionId, resetSession } = useKioskStore();
+
+  // If no patient registration exists, always ensure we are on check-in
+  useEffect(() => {
+    if (!patient || !sessionId) {
+      if (step !== 'checkin') {
+        resetSession();
+      }
+    }
+  }, [patient, sessionId, step, resetSession]);
 
   // Prevent accidental browser-back during intake
   useEffect(() => {
@@ -31,7 +41,7 @@ export default function KioskPage() {
     }
   }, [step]);
 
-  if (step === 'checkin') {
+  if (!patient || !sessionId || step === 'checkin') {
     return (
       <div className="min-h-screen flex flex-col">
         <Header title="Patient Registration" showLang />
@@ -68,7 +78,7 @@ export default function KioskPage() {
         <div className="flex gap-1 items-center text-xs text-slate-400">
           {STEP_LABELS.map((s, idx) => (
             <span key={s.key} className="flex items-center gap-1">
-              {idx > 0 && <span>›</span>}
+              {idx > 0 && <ChevronRight className="w-3 h-3 text-slate-300" />}
               <span
                 className={
                   s.key === step

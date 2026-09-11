@@ -65,7 +65,7 @@ export function SocratesMatrix({ hpi }: SocratesMatrixProps) {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+    <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h4 className="font-bold text-slate-800 text-sm tracking-wide flex items-center gap-2">
@@ -77,7 +77,7 @@ export function SocratesMatrix({ hpi }: SocratesMatrixProps) {
 
         {/* Severity Bar */}
         {hpi.severity && (
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-md">
             <span className="text-xs text-slate-500 font-medium">Severity:</span>
             <span
               className={cn(
@@ -104,7 +104,7 @@ export function SocratesMatrix({ hpi }: SocratesMatrixProps) {
             <div
               key={idx}
               className={cn(
-                'p-3 rounded-xl border transition-all text-xs',
+                'p-3 rounded-md border transition-all text-xs',
                 isFilled
                   ? 'bg-slate-50/70 border-slate-200 text-slate-800'
                   : 'bg-slate-50/20 border-dashed border-slate-200 text-slate-400'

@@ -63,6 +63,7 @@ export interface PatientRegistration {
   mobile: string;
   abhaId: string;
   language: Language;
+  department?: 'general' | 'ayush';
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +73,7 @@ export interface PatientRegistration {
 export interface QueueEntry {
   sessionId: string;
   tokenNumber: number;
+  queuePosition?: number;
   patientName: string;
   age: string;
   sex: BiologicalSex;
@@ -80,7 +82,15 @@ export interface QueueEntry {
   urgencyTier: 'low' | 'medium' | 'high' | null;
   redFlagReason: string | null;
   isCompleted: boolean;
+  isConsulted?: boolean;
+  attended?: boolean;
+  turnCount?: number;
+  startedAt?: number | null;
+  tokenExpiresAt?: number | null;
+  tokenStatus?: 'provisional' | 'confirmed';
   summaryLoaded: boolean;
+  documentCount?: number;
+  department?: 'general' | 'ayush';
 }
 
 // ---------------------------------------------------------------------------

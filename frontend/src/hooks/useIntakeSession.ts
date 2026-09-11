@@ -9,10 +9,10 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { postIntakeTurn } from '@/lib/api';
+import { postIntakeTurn, postSummary } from '@/lib/api';
 import { useKioskStore } from '@/store/kioskStore';
 import { useDoctorStore } from '@/store/doctorStore';
-import { saveRedFlagAlert, saveCompletedHistory } from '@/lib/actions/db';
+import { saveRedFlagAlert, saveCompletedHistory, recordTurnStarted } from '@/lib/actions/db';
 import type { QueueEntry } from '@/types/kiosk';
 
 export function useIntakeSession() {
@@ -20,13 +20,15 @@ export function useIntakeSession() {
     sessionId,
     patient,
     tokenNumber,
+    queuePosition,
     addPatientMessage,
     addAIMessage,
     setIntakeResponse,
+    setGeneratedSummary,
     setLoading,
   } = useKioskStore();
 
-  const { enqueuePatient } = useDoctorStore();
+  const { enqueuePatient, setSummary } = useDoctorStore();
   const [lastMessage, setLastMessage] = useState<string>('');
 
   const mutation = useMutation({
@@ -49,6 +51,11 @@ export function useIntakeSession() {
         target_field: response.target_field,
       });
 
+      // Disarm no-show expiry permanently on turn activity without touching queue slot
+      if (sessionId && response.state?.turn_count !== undefined) {
+        recordTurnStarted(sessionId, response.state.turn_count);
+      }
+
       // 1. IMMEDIATE DB WRITE: Save red-flag row if clinical risk detected
       if (response.red_flag.is_flagged && sessionId) {
         saveRedFlagAlert(sessionId, response.red_flag).then((res) => {
@@ -63,17 +70,13 @@ export function useIntakeSession() {
         addAIMessage(response.next_question);
       }
 
-      // 2. FINAL DB WRITE: When intake completes → save full state & enqueue
+      // 2. FINAL DB WRITE & SUMMARY GENERATION: When intake completes → save full state, enqueue & auto-generate summary
       if (response.state.status === 'completed' && patient && sessionId) {
-        saveCompletedHistory(sessionId, response.state).then((res) => {
-          if (!res.success) {
-            console.warn('[Supabase Notice]:', res.error);
-          }
-        });
-
         const entry: QueueEntry = {
           sessionId,
           tokenNumber: tokenNumber ?? 0,
+          queuePosition: queuePosition ?? tokenNumber ?? 0,
+          tokenStatus: 'confirmed',
           patientName: patient.name,
           age: patient.age,
           sex: patient.sex,
@@ -85,6 +88,27 @@ export function useIntakeSession() {
           summaryLoaded: false,
         };
         enqueuePatient(entry, response.state, response.red_flag);
+
+        // Save structured history immediately to Supabase
+        saveCompletedHistory(sessionId, response.state).then((res) => {
+          if (!res.success) {
+            console.warn('[Supabase Notice]:', res.error);
+          }
+        });
+
+        // Automatically generate physician summary via Pipeline 2 (/summary)
+        postSummary({ state: response.state })
+          .then((summaryRes) => {
+            if (summaryRes?.summary) {
+              setSummary(sessionId, summaryRes.summary);
+              setGeneratedSummary(summaryRes.summary);
+              // Persist again with proseSummary populated
+              saveCompletedHistory(sessionId, response.state, summaryRes.summary);
+            }
+          })
+          .catch((summaryErr) => {
+            console.error('[Summary Auto-Generation Error]:', summaryErr);
+          });
       }
     },
 

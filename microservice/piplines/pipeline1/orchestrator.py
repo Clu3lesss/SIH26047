@@ -169,6 +169,51 @@ def _apply_updates(state: PatientHistoryState, updates: StateUpdate) -> PatientH
 # Pipeline 1 public interface
 # ---------------------------------------------------------------------------
 
+MAX_TURNS = 6
+
+
+def _handle_negative_fallback(state: PatientHistoryState, message: str) -> None:
+    """If patient gave a negative/normal response, ensure the targeted section is recorded."""
+    msg_lower = message.strip().lower()
+    negative_words = ("no", "none", "nothing", "normal", "fine", "no symptoms", "completely normal", "nil", "na", "n/a", "no pain")
+    is_negative = any(w in msg_lower for w in negative_words)
+
+    if not is_negative or not state.last_target_field:
+        return
+
+    field = state.last_target_field
+    # Check review of systems
+    if hasattr(state.review_of_systems, field):
+        if getattr(state.review_of_systems, field) is None:
+            setattr(state.review_of_systems, field, "normal / none reported")
+        state.review_of_systems_asked = True
+
+    # Check HPI
+    if hasattr(state.hpi, field):
+        current_val = getattr(state.hpi, field)
+        if current_val is None or (isinstance(current_val, list) and not current_val):
+            if isinstance(current_val, list):
+                setattr(state.hpi, field, ["none reported"])
+            else:
+                setattr(state.hpi, field, "none / denied")
+
+    # Check section flags
+    if field in ("conditions", "past_medical_history"):
+        state.conditions_asked = True
+    elif field in ("surgeries", "surgical_history"):
+        state.surgeries_asked = True
+    elif field in ("medications", "drugs"):
+        state.medications_asked = True
+    elif field == "allergies":
+        state.allergies_asked = True
+    elif field == "family_history":
+        state.family_history_asked = True
+    elif field in ("social_history", "smoking", "alcohol", "diet", "occupation", "living_situation"):
+        state.social_history_asked = True
+        if hasattr(state.social_history, field) and getattr(state.social_history, field) is None:
+            setattr(state.social_history, field, "none reported")
+
+
 async def process_turn(session_id: str, message: str) -> IntakeResponse:
     """
     Process one patient turn through Pipeline 1.
@@ -181,13 +226,9 @@ async def process_turn(session_id: str, message: str) -> IntakeResponse:
         IntakeResponse with status "in_progress" (includes next_question)
         or "completed" (includes full final PatientHistoryState).
 
-    No database is read or written. State is held in the module-level
-    in-memory session store.
-
-    Rate limiting:
-        Three LLM calls are made per normal turn. A configurable sleep
-        (_CALL_DELAY seconds, default 2 s) is inserted between each call
-        to stay within the Mistral free-tier rate limit.
+    Hard Question Limit:
+        The intake terminates and marks state completed after MAX_TURNS (6)
+        turns or when all required medical history fields are complete.
     """
 
     # 1. Retrieve or create session state
@@ -199,22 +240,45 @@ async def process_turn(session_id: str, message: str) -> IntakeResponse:
 
     # 3. Apply extracted updates to state
     state = _apply_updates(state, updates)
+    _handle_negative_fallback(state, message)
 
     # 4. Red-flag check (LLM call 2 — gated by global rate limiter)
     red_flag: RedFlagResult = await redflag_agent.run(state)
 
     # 5. Completion check (deterministic — no LLM)
-    if completion_check.is_complete(state):
+    # Complete if all required fields are addressed OR hard question limit (6 turns) reached
+    if completion_check.is_complete(state) or state.turn_count >= MAX_TURNS:
         state.status = "completed"
+        state.last_target_field = None
         session_store.save(session_id, state)
         return IntakeResponse(
             status="completed",
             state=state,
             red_flag=red_flag,
+            target_field=None,
         )
 
     # 6. Precedence queue — find next field (deterministic — no LLM)
     target = precedence_queue.get_next_field(state)
+
+    if target is None:
+        state.status = "completed"
+        state.last_target_field = None
+        session_store.save(session_id, state)
+        return IntakeResponse(
+            status="completed",
+            state=state,
+            red_flag=red_flag,
+            target_field=None,
+        )
+
+    # Record target in asked_fields to guarantee it is NEVER asked again
+    if target.field not in state.asked_fields:
+        state.asked_fields.append(target.field)
+    field_key = f"{target.section}.{target.field}"
+    if field_key not in state.asked_fields:
+        state.asked_fields.append(field_key)
+    state.last_target_field = target.field
 
     # 7. Question Phrasing Agent (LLM call 3 — gated by global rate limiter)
     next_question: str = await question_agent.run(target, state)

@@ -44,6 +44,30 @@ export interface ReviewOfSystems {
 }
 
 // ---------------------------------------------------------------------------
+// AYUSH / Ayurvedic Examination Schema (Dashavidha Pariksha)
+// ---------------------------------------------------------------------------
+
+export interface AharaVihara {
+  dietary_habits: string;
+  lifestyle_routine: string;
+  koshtha: string; // Bowel nature: Mridu / Madhyama / Krura
+}
+
+export interface DashavidhaPariksha {
+  prakriti: string;        // Body constitution (e.g. Pitta-Kapha)
+  vikriti: string;         // Current Dosha imbalance
+  sara: string;            // Tissue excellence / vitality
+  samhanana: string;       // Body compactness
+  pramana: string;         // Body proportions & measurements
+  satmya: string;          // Habituation & food adaptabilities
+  sattva: string;          // Mental resilience (Pravara/Madhyama/Avara)
+  ahara_shakti: string;    // Digestive power (Agni: Mandagni/Tikshnagni/etc.)
+  vyayama_shakti: string;  // Physical endurance & exercise capacity
+  vaya: string;            // Age & developmental stage
+  ahara_vihara?: AharaVihara;
+}
+
+// ---------------------------------------------------------------------------
 // Central patient history state (mirrors PatientHistoryState)
 // ---------------------------------------------------------------------------
 
@@ -52,12 +76,16 @@ export interface PatientHistoryState {
   session_id: string;
   turn_count: number;
   status: 'in_progress' | 'completed';
+  department?: 'general' | 'ayush';
 
   // Chief complaint
   chief_complaint: string | null;
 
   // History of Present Illness (SOCRATES)
   hpi: HPI;
+
+  // Ayurvedic Assessment (Dashavidha Pariksha)
+  dashavidha?: DashavidhaPariksha;
 
   // Past Medical History
   conditions: string[];
@@ -86,6 +114,10 @@ export interface PatientHistoryState {
   // Review of Systems
   review_of_systems: ReviewOfSystems;
   review_of_systems_asked: boolean;
+
+  // Question tracking & anti-repetition
+  asked_fields?: string[];
+  last_target_field?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,5 +199,7 @@ export function createEmptyPatientState(session_id: string): PatientHistoryState
     social_history_asked: false,
     review_of_systems: { cardiovascular: null, respiratory: null, gastrointestinal: null, neurological: null, musculoskeletal: null },
     review_of_systems_asked: false,
+    asked_fields: [],
+    last_target_field: null,
   };
 }

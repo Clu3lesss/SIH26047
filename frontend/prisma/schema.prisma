@@ -28,11 +28,15 @@ model Patient {
 model Session {
   id           String          @id // e.g. "OPD-20260908-1042"
   patientId    String?         @map("patient_id")
-  tokenNumber  Int             @map("token_number")
-  status       String          @default("in_progress") // "in_progress" | "completed" | "consulted"
-  turnCount    Int             @default(0) @map("turn_count")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  completedAt  DateTime?       @map("completed_at")
+  tokenNumber     Int             @map("token_number")
+  queuePosition   Int             @default(0) @map("queue_position")
+  status          String          @default("in_progress") // "in_progress" | "completed" | "consulted" | "expired"
+  attended        Boolean         @default(false)
+  turnCount       Int             @default(0) @map("turn_count")
+  tokenExpiresAt  DateTime?       @map("token_expires_at")
+  startedAt       DateTime?       @map("started_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  completedAt     DateTime?       @map("completed_at")
 
   patient      Patient?        @relation(fields: [patientId], references: [id], onDelete: SetNull)
   redFlags     RedFlag[]

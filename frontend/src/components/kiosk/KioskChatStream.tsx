@@ -78,18 +78,18 @@ export function KioskChatStream() {
             <div
               key={msg.id}
               className={cn(
-                'flex animate-slide-up',
+                'flex items-start',
                 msg.role === 'ai' ? 'justify-start' : 'justify-end'
               )}
             >
               {msg.role === 'ai' && (
-                <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0 mr-3 mt-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0 mr-3 mt-1">
                   AI
                 </div>
               )}
               <div
                 className={cn(
-                  'max-w-[78%] px-5 py-4 rounded-2xl text-kiosk-sm leading-relaxed shadow-sm',
+                  'max-w-[78%] px-5 py-4 rounded-xl text-kiosk-sm leading-relaxed',
                   msg.role === 'ai'
                     ? 'bg-white border border-clinical-muted text-slate-800 rounded-tl-sm'
                     : 'bg-teal-600 text-white rounded-tr-sm'
@@ -119,11 +119,11 @@ export function KioskChatStream() {
 
           {/* Loading indicator */}
           {isLoading && (
-            <div className="flex justify-start animate-fade-in">
-              <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0 mr-3 mt-1">
+            <div className="flex justify-start ">
+              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0 mr-3 mt-1">
                 AI
               </div>
-              <div className="bg-white border border-clinical-muted px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm max-w-[78%]">
+              <div className="bg-white border border-clinical-muted px-5 py-4 rounded-xl rounded-tl-sm max-w-[78%]">
                 <div className="flex items-center gap-2 text-teal-600">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm font-medium">{LOADING_MESSAGES[loadingMsgIdx]}</span>
@@ -134,11 +134,11 @@ export function KioskChatStream() {
 
           {/* Error notice with clear explanation and 1-click retry */}
           {error && (
-            <div className="flex justify-start animate-fade-in my-2">
-              <div className="w-9 h-9 rounded-full bg-red-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mr-3 mt-1">
+            <div className="flex justify-start  my-2">
+              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mr-3 mt-1">
                 !
               </div>
-              <div className="bg-red-50 border border-red-200 text-red-950 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm max-w-[85%] text-xs space-y-2">
+              <div className="bg-red-50 border border-red-200 text-red-950 px-4 py-3 rounded-xl rounded-tl-sm max-w-[85%] text-xs space-y-2">
                 <div className="flex items-center gap-1.5 font-bold text-red-800">
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                   <span>Request Issue</span>
@@ -182,12 +182,12 @@ export function KioskChatStream() {
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
               placeholder="Type your answer here..."
               disabled={isLoading}
-              className="flex-1 px-5 py-3.5 rounded-xl border border-clinical-muted bg-clinical-offwhite text-kiosk-sm focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50"
+              className="flex-1 px-5 py-3.5 rounded-lg border border-clinical-muted bg-clinical-offwhite text-kiosk-sm focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={!inputText.trim() || isLoading}
-              className="w-12 h-12 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
+              className="w-12 h-12 bg-teal-600 hover:bg-teal-700 text-white rounded-lg flex items-center justify-center disabled:opacity-40 transition-colors shrink-0"
               aria-label="Send"
             >
               <Send className="w-5 h-5" />
@@ -211,3 +211,4 @@ export function KioskChatStream() {
     </div>
   );
 }
+

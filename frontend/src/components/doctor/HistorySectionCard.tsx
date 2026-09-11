@@ -1,7 +1,7 @@
 'use client';
 
 import type { PatientHistoryState } from '@/types/intake';
-import { AlertCircle, Pill, ShieldCheck, Users2, Wine, ActivitySquare, HeartPulse } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Pill, ShieldCheck, Users2, Wine, ActivitySquare, HeartPulse } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HistorySectionCardProps {
@@ -18,7 +18,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
         {/* Allergies */}
         <div
           className={cn(
-            'rounded-2xl border p-4 shadow-sm',
+            'rounded-lg border p-4',
             hasAllergies
               ? 'bg-red-50/60 border-red-200 text-red-950'
               : 'bg-white border-slate-200'
@@ -42,9 +42,10 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
               {state.allergies.map((allergy, i) => (
                 <span
                   key={i}
-                  className="bg-red-200/70 border border-red-300 text-red-900 px-2.5 py-1 rounded-lg text-xs font-bold"
+                  className="inline-flex items-center gap-1 bg-red-100 border border-red-200 text-red-900 px-2 py-0.5 rounded text-xs font-semibold"
                 >
-                  ⚠️ {allergy}
+                  <AlertTriangle className="w-3 h-3 text-red-700 shrink-0" />
+                  <span>{allergy}</span>
                 </span>
               ))}
             </div>
@@ -56,7 +57,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
         </div>
 
         {/* Current Medications */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-2 font-bold text-sm text-slate-700">
             <Pill className="w-4 h-4 text-teal-600" />
             <span>Current Medications</span>
@@ -66,7 +67,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
               {state.medications.map((med, i) => (
                 <span
                   key={i}
-                  className="bg-teal-50 border border-teal-200 text-teal-900 px-2.5 py-1 rounded-lg text-xs font-semibold"
+                  className="bg-teal-50 border border-teal-200 text-teal-900 px-2.5 py-1 rounded text-xs font-medium"
                 >
                   {med}
                 </span>
@@ -82,7 +83,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
 
       {/* Past Medical & Surgical History */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-600" />
             Past Medical Conditions
@@ -103,7 +104,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
             <ActivitySquare className="w-4 h-4 text-teal-600" />
             Past Surgical History
@@ -127,7 +128,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
 
       {/* Family & Social History */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
             <Users2 className="w-4 h-4 text-teal-600" />
             Family History
@@ -148,7 +149,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
             <Wine className="w-4 h-4 text-teal-600" />
             Personal & Social Habits
@@ -175,7 +176,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
       </div>
 
       {/* Review of Systems (ROS) */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div className="bg-white rounded-lg border border-slate-200 p-4">
         <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
           <HeartPulse className="w-4 h-4 text-teal-600" />
           Review of Systems (ROS) Checklist
@@ -188,7 +189,7 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
             { label: 'Neurological', val: state.review_of_systems.neurological },
             { label: 'Musculoskeletal', val: state.review_of_systems.musculoskeletal },
           ].map((ros, i) => (
-            <div key={i} className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/60">
+            <div key={i} className="border border-slate-100 rounded p-2.5 bg-slate-50">
               <span className="font-bold text-slate-700 block text-[11px] mb-1">{ros.label}</span>
               <span className="text-slate-600 block text-[11px] leading-relaxed">
                 {ros.val || 'Unremarkable / None'}
@@ -200,3 +201,5 @@ export function HistorySectionCard({ state }: HistorySectionCardProps) {
     </div>
   );
 }
+
+

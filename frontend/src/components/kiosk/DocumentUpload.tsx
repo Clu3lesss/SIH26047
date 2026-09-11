@@ -1,34 +1,61 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, FileText, Plus, ArrowRight, Info } from 'lucide-react';
+import { Camera, FileText, Plus, ArrowRight, Info, CheckCircle2, Loader2, X } from 'lucide-react';
 import { useKioskStore } from '@/store/kioskStore';
+import { saveUploadedDocument } from '@/lib/actions/db';
 import { cn } from '@/lib/utils';
 
 interface UploadedDoc {
   id: string;
   name: string;
   dataUrl: string;
+  isSaved?: boolean;
 }
 
 export function DocumentUpload() {
-  const { setStep } = useKioskStore();
+  const { sessionId, setStep } = useKioskStore();
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const docId = `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        // 1. Add to local UI state
         setDocs((prev) => [
           ...prev,
           {
-            id: `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            id: docId,
             name: file.name,
-            dataUrl: ev.target?.result as string,
+            dataUrl,
+            isSaved: false,
           },
         ]);
+
+        // 2. Persist to Supabase so doctor can immediately view it
+        if (sessionId) {
+          try {
+            const res = await saveUploadedDocument(sessionId, dataUrl, file.name, 'prescription');
+            if (res.success) {
+              setDocs((prev) =>
+                prev.map((d) => (d.id === docId ? { ...d, isSaved: true } : d))
+              );
+            }
+          } catch (err) {
+            console.error('[Document Upload Error]:', err);
+          }
+        }
+        setIsUploading(false);
       };
       reader.readAsDataURL(file);
     });
@@ -50,7 +77,7 @@ export function DocumentUpload() {
         </p>
 
         {/* Info banner */}
-        <div className="flex items-start gap-3 bg-teal-50 border border-teal-200 rounded-2xl p-4 mb-6">
+        <div className="flex items-start gap-3 bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
           <Info className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
           <p className="text-sm text-teal-800">
             OCR document extraction is coming soon. Your uploads are saved for the doctor to view during consultation.
@@ -59,10 +86,10 @@ export function DocumentUpload() {
 
         {/* Upload area */}
         <div
-          className="w-full border-2 border-dashed border-clinical-muted rounded-2xl p-10 text-center bg-white hover:border-teal-400 hover:bg-teal-50 transition-all cursor-pointer mb-6"
+          className="w-full border-2 border-dashed border-clinical-muted rounded-lg p-10 text-center bg-white hover:border-teal-400 hover:bg-teal-50 transition-all cursor-pointer mb-6"
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Camera className="w-8 h-8 text-teal-600" />
           </div>
           <p className="text-kiosk-md text-slate-700 mb-2 font-semibold">
@@ -91,7 +118,7 @@ export function DocumentUpload() {
             {docs.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center gap-3 bg-white rounded-xl border border-clinical-muted p-3"
+                className="flex items-center gap-3 bg-white rounded-lg border border-slate-200 p-3"
               >
                 {doc.dataUrl.startsWith('data:image') ? (
                   <img
@@ -106,19 +133,16 @@ export function DocumentUpload() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-700 truncate">{doc.name}</p>
-                  <p className="text-xs text-emerald-600 font-medium">✓ Uploaded</p>
+                  <p className={"text-xs font-medium flex items-center gap-1.5 " + (doc.isSaved ? "text-emerald-600" : "text-amber-600 animate-pulse")}>{doc.isSaved ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />}{doc.isSaved ? "Saved to Doctor" : "Saving..."}</p>
                 </div>
                 <button
                   onClick={() => removeDoc(doc.id)}
-                  className="text-slate-400 hover:text-red-500 text-lg font-bold transition-colors px-2"
-                >
-                  ×
-                </button>
+                  className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded hover:bg-red-50"><X className="w-4 h-4" /></button>
               </div>
             ))}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border border-clinical-muted rounded-xl py-3 text-sm font-medium text-slate-600 hover:bg-clinical-light transition-colors"
+              className="w-full flex items-center justify-center gap-2 border border-slate-200 rounded-lg py-3 text-sm font-medium text-slate-600 hover:bg-clinical-light transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add another document
@@ -129,7 +153,7 @@ export function DocumentUpload() {
         {/* Continue */}
         <button
           onClick={() => setStep('complete')}
-          className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 text-kiosk-sm touch-target-lg transition-colors shadow-lg"
+          className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-3 text-kiosk-sm touch-target transition-colors"
         >
           {docs.length > 0 ? `Continue with ${docs.length} document(s)` : 'Skip — No documents'}
           <ArrowRight className="w-5 h-5" />
@@ -138,3 +162,4 @@ export function DocumentUpload() {
     </div>
   );
 }
+

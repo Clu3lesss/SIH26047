@@ -4,9 +4,10 @@ import { useState } from 'react';
 import type { PhysicianSummary } from '@/types/intake';
 import { useDoctorStore } from '@/store/doctorStore';
 import { useSummaryGeneration } from '@/hooks/useSummaryGeneration';
-import { CheckCircle, Copy, Edit3, Eye, FileText, Loader2, Printer, Sparkles } from 'lucide-react';
+import { CheckCircle, Copy, Edit3, Eye, FileText, Loader2, Printer, Sparkles, AlertTriangle } from 'lucide-react';
 import { playSuccess } from '@/lib/sound';
 import { savePhysicianApproval } from '@/lib/actions/db';
+import { cn } from '@/lib/utils';
 
 interface EditableSummaryEditorProps {
   sessionId: string;
@@ -84,7 +85,7 @@ ${currentSummary.review_of_systems}
 
   if (summaryLoading || isGenerating) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center">
+      <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
         <Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto mb-3" />
         <h4 className="font-bold text-slate-800 text-sm">Generating Clinical Summary...</h4>
         <p className="text-xs text-slate-500 mt-1">Pipeline 2 is synthesizing structured data into physician notes.</p>
@@ -94,7 +95,7 @@ ${currentSummary.review_of_systems}
 
   if (!currentSummary) {
     return (
-      <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 shadow-sm text-center">
+      <div className="bg-white rounded-lg border border-dashed border-slate-300 p-8 text-center">
         <Sparkles className="w-8 h-8 text-teal-600 mx-auto mb-2" />
         <h4 className="font-bold text-slate-800 text-sm">AI Summary Not Generated</h4>
         <p className="text-xs text-slate-500 mb-4">
@@ -102,7 +103,7 @@ ${currentSummary.review_of_systems}
         </p>
         <button
           onClick={handleGenerate}
-          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 mx-auto transition-colors shadow-sm"
+          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-md text-xs flex items-center gap-1.5 mx-auto transition-colors"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Generate Physician Summary
@@ -124,8 +125,8 @@ ${currentSummary.review_of_systems}
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-      {/* Header & Actions */}
+    <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4">
+      {/* Header & Utility Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
         <div>
           <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
@@ -135,68 +136,89 @@ ${currentSummary.review_of_systems}
           <p className="text-xs text-slate-400">Pipeline 2 synthesized clinical prose</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Utility actions — left of toolbar */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
           >
             {isEditing ? <Eye className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
-            <span>{isEditing ? 'View Mode' : 'Edit Note'}</span>
+            <span>{isEditing ? 'View' : 'Edit'}</span>
           </button>
 
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" />
-            <span>{copied ? 'Copied!' : 'Copy to EMR'}</span>
+            <span>{copied ? 'Copied!' : 'Copy'}</span>
           </button>
 
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print</span>
-          </button>
-
-          <button
-            onClick={handleApprove}
-            disabled={physicianApproved}
-            className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              physicianApproved
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-teal-600 hover:bg-teal-700 text-white'
-            }`}
-          >
-            <CheckCircle className="w-3.5 h-3.5" />
-            <span>{physicianApproved ? 'Approved' : 'Approve & Sign'}</span>
           </button>
         </div>
       </div>
 
       {/* Sections rendering / editing */}
       <div className="space-y-3.5 text-xs">
-        {sections.map(({ key, title }) => (
-          <div key={key} className="space-y-1">
-            <span className="font-bold text-slate-700 block tracking-wide uppercase text-[10px]">
-              {title}
-            </span>
-            {isEditing ? (
-              <textarea
-                value={currentSummary[key] || ''}
-                onChange={(e) => updateEditedSummary(sessionId, key, e.target.value)}
-                rows={2}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-sans text-xs text-slate-900 transition-all"
-              />
-            ) : (
-              <p className="text-slate-800 leading-relaxed bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
-                {currentSummary[key] || <span className="italic text-slate-400">None reported</span>}
-              </p>
-            )}
-          </div>
-        ))}
+        {sections.map(({ key, title }) => {
+          const isAllergiesSection = key === 'allergies';
+          const hasAllergyContent = isAllergiesSection && currentSummary[key] && currentSummary[key] !== 'None reported' && currentSummary[key] !== 'No known allergies';
+          return (
+            <div
+              key={key}
+              className={cn(
+                'space-y-1 rounded',
+                hasAllergyContent && 'bg-red-50/50 border border-red-200 p-2.5 -mx-1'
+              )}
+            >
+              <span className={cn(
+                'font-bold block tracking-wide uppercase text-[10px]',
+                hasAllergyContent ? 'text-red-700 flex items-center gap-1' : 'text-slate-700'
+              )}>
+                {hasAllergyContent && <AlertTriangle className="w-3 h-3 text-red-600" />}
+                {title}
+              </span>
+              {isEditing ? (
+                <textarea
+                  value={currentSummary[key] || ''}
+                  onChange={(e) => updateEditedSummary(sessionId, key, e.target.value)}
+                  rows={2}
+                  className="w-full p-2.5 border border-slate-300 rounded bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-sans text-xs text-slate-900 transition-all"
+                />
+              ) : (
+                <p className="text-slate-800 leading-relaxed bg-slate-50/50 p-2.5 rounded border border-slate-100">
+                  {currentSummary[key] || <span className="italic text-slate-400">None reported</span>}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Primary CTA — Approve & Sign — full width at bottom */}
+      <div className="pt-3 border-t border-slate-100">
+        <button
+          onClick={handleApprove}
+          disabled={physicianApproved}
+          className={cn(
+            'w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-bold transition-colors',
+            physicianApproved
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-default'
+              : 'bg-teal-600 hover:bg-teal-700 text-white'
+          )}
+        >
+          <CheckCircle className="w-4 h-4" />
+          {physicianApproved ? 'Note Approved & Signed' : 'Approve & Sign Clinical Note'}
+        </button>
       </div>
     </div>
   );
 }
+
+

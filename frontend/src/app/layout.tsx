@@ -3,9 +3,15 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'MediKiosk — AI Clinical History Intake',
+  title: 'MediKiosk — AI Clinical History Intake & Triage Platform',
   description:
-    'AI-powered clinical history intake platform for high-volume Indian OPDs. Captures structured patient history before consultation.',
+    'MediKiosk captures a complete structured clinical history via AI conversation and document digitization before the patient enters the consultation room.',
+  openGraph: {
+    title: 'MediKiosk — AI Clinical History Intake & Triage Platform',
+    description:
+      'Captures complete 7-section clinical history via AI before consultation.',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

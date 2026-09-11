@@ -78,6 +78,8 @@ class PatientHistoryState(BaseModel):
     session_id: str
     turn_count: int = 0
     status: Literal["in_progress", "completed"] = "in_progress"
+    asked_fields: List[str] = Field(default_factory=list)
+    last_target_field: Optional[str] = None
 
     # Chief complaint
     chief_complaint: Optional[str] = None

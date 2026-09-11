@@ -30,7 +30,10 @@ Rules:
 - Do not leave chief_complaint null when the message explicitly names the reason
     for the visit (for example, "chest pain", "headache", or "fever").
 - For lists: return only NEW items.
-- Set _asked flags true when the patient addresses a topic (even if "none").
+- If the patient denies symptoms or answers negatively (e.g. "no", "none", "nothing", "normal", "completely normal", "no symptoms in this area", "fine"):
+    * Populate the addressed field with "none" or "normal" or "denied" (e.g. for review_of_systems fields or HPI fields).
+    * Always set the corresponding _asked flags to true.
+- Set _asked flags true whenever the patient addresses a topic (even if "none" or "no symptoms").
 - Return null for anything not mentioned.
 """
 

@@ -27,9 +27,9 @@ export function RedFlagAlertBanner() {
       : 'bg-yellow-500 text-slate-900';
 
   return (
-    <div className={cn('px-4 py-3 shadow-md flex items-center justify-between gap-3 animate-slide-up', tierBg)}>
+    <div className={cn('px-4 py-3 flex items-center justify-between gap-3', tierBg)}>
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center shrink-0">
           <AlertTriangle className="w-5 h-5 text-white" />
         </div>
         <div className="min-w-0">
@@ -50,13 +50,13 @@ export function RedFlagAlertBanner() {
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => selectPatient(topAlert.sessionId)}
-          className="bg-white text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-red-50 flex items-center gap-1 transition-colors"
+          className="bg-white text-red-700 font-bold px-3 py-1.5 rounded text-xs hover:bg-red-50 flex items-center gap-1 transition-colors"
         >
           View Record <ArrowRight className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => dismissRedFlag(topAlert.sessionId)}
-          className="p-1.5 hover:bg-black/10 rounded-lg text-white/80 hover:text-white transition-colors"
+          className="p-1.5 hover:bg-black/10 rounded text-white/80 hover:text-white transition-colors"
           title="Dismiss Alert"
         >
           <X className="w-4 h-4" />
@@ -65,3 +65,4 @@ export function RedFlagAlertBanner() {
     </div>
   );
 }
+

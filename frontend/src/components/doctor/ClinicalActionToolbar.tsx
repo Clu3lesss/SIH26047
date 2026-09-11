@@ -1,17 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, FileSpreadsheet, Stethoscope, Syringe } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Stethoscope, Syringe } from 'lucide-react';
 import { playBeep, playSuccess } from '@/lib/sound';
 import { useDoctorStore } from '@/store/doctorStore';
+import { markSessionAttended } from '@/lib/actions/db';
 
 interface ClinicalActionToolbarProps {
   sessionId: string;
 }
 
 export function ClinicalActionToolbar({ sessionId }: ClinicalActionToolbarProps) {
-  const { approveRecord } = useDoctorStore();
+  const { queue, markAttended } = useDoctorStore();
+  const currentRecord = queue.find((r) => r.entry.sessionId === sessionId);
+  const isAttended = currentRecord?.physicianApproved || currentRecord?.entry.isConsulted || false;
+
   const [orderedActions, setOrderedActions] = useState<string[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleOrder = (actionName: string) => {
     playBeep();
@@ -20,9 +25,18 @@ export function ClinicalActionToolbar({ sessionId }: ClinicalActionToolbarProps)
     );
   };
 
-  const handleCompleteConsult = () => {
-    approveRecord(sessionId);
+  const handleToggleAttended = async () => {
     playSuccess();
+    markAttended(sessionId);
+
+    setIsUpdating(true);
+    try {
+      await markSessionAttended(sessionId);
+    } catch (e) {
+      console.warn('[Notice]: Failed to persist attended state:', e);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const actions = [
@@ -33,9 +47,9 @@ export function ClinicalActionToolbar({ sessionId }: ClinicalActionToolbarProps)
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+    <div className="bg-white rounded-lg border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-slate-500 uppercase mr-1">Quick Orders:</span>
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide mr-1">Quick Orders:</span>
         {actions.map((act) => {
           const Icon = act.icon;
           const isSelected = orderedActions.includes(act.id);
@@ -44,7 +58,7 @@ export function ClinicalActionToolbar({ sessionId }: ClinicalActionToolbarProps)
             <button
               key={act.id}
               onClick={() => handleOrder(act.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
                 isSelected
                   ? act.urgent
                     ? 'bg-red-600 text-white border-red-600'
@@ -56,18 +70,19 @@ export function ClinicalActionToolbar({ sessionId }: ClinicalActionToolbarProps)
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{act.label}</span>
-              {isSelected && <span className="ml-1 text-[10px]">✓</span>}
+              {isSelected && <CheckCircle2 className="w-3 h-3 ml-0.5" />}
             </button>
           );
         })}
       </div>
 
       <button
-        onClick={handleCompleteConsult}
-        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+        onClick={handleToggleAttended}
+        disabled={isUpdating}
+        className="font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 transition-all border bg-emerald-600 hover:bg-emerald-700 text-white border-transparent disabled:opacity-50"
       >
         <CheckCircle2 className="w-4 h-4" />
-        <span>Complete Consultation</span>
+        {isUpdating ? 'Completing...' : 'Mark as Attended (Complete)'}
       </button>
     </div>
   );

@@ -120,6 +120,11 @@ def _is_filled(state: PatientHistoryState, target: TargetField) -> bool:
     family_history), the _asked flag is the primary signal — an empty list with
     _asked=True means the patient was asked and confirmed none.
     """
+    # 1. Never re-ask a field that has already been explicitly asked
+    if hasattr(state, "asked_fields") and state.asked_fields:
+        if target.field in state.asked_fields or f"{target.section}.{target.field}" in state.asked_fields:
+            return True
+
     section = target.section
 
     if section == "chief_complaint":
@@ -144,10 +149,10 @@ def _is_filled(state: PatientHistoryState, target: TargetField) -> bool:
         return state.family_history_asked
 
     if section == "social_history":
-        return _is_social_field_filled(state, target.field)
+        return state.social_history_asked or _is_social_field_filled(state, target.field)
 
     if section == "review_of_systems":
-        return _is_ros_field_filled(state, target.field)
+        return state.review_of_systems_asked or _is_ros_field_filled(state, target.field)
 
     return False
 
