@@ -50,7 +50,7 @@ export default function DoctorPage() {
   // Initial load and live background polling (every 4 seconds)
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 4000);
+    const interval = setInterval(fetchQueue, 6000);
     return () => clearInterval(interval);
   }, [fetchQueue]);
 

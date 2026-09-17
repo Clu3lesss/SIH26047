@@ -64,7 +64,7 @@ export default function DemoPage() {
 
   useEffect(() => {
     syncQueue();
-    const interval = setInterval(syncQueue, 4000);
+    const interval = setInterval(syncQueue, 6000);
     return () => clearInterval(interval);
   }, [syncQueue]);
 

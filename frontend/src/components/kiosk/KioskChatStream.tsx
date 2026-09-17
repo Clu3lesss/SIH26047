@@ -6,7 +6,6 @@ import { useKioskStore } from '@/store/kioskStore';
 import { useIntakeSession } from '@/hooks/useIntakeSession';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { VoiceInputButton } from './VoiceInputButton';
-import { SmartResponseChips } from './SmartResponseChips';
 import { ClinicalProgressStepper } from './ClinicalProgressStepper';
 import { cn } from '@/lib/utils';
 import { formatTimestamp } from '@/lib/utils';
@@ -20,7 +19,7 @@ const LOADING_MESSAGES = [
 ];
 
 export function KioskChatStream() {
-  const { messages, currentQuestion, targetField, historyState, isLoading, patient, ttsEnabled, toggleTTS } =
+  const { messages, currentQuestion, historyState, isLoading, patient, ttsEnabled, toggleTTS } =
     useKioskStore();
   const { sendMessage, retryLastMessage, error } = useIntakeSession();
   const { speak } = useSpeechSynthesis();
@@ -54,12 +53,6 @@ export function KioskChatStream() {
     const text = inputText.trim();
     if (!text || isLoading) return;
     sendMessage(text);
-    setInputText('');
-  };
-
-  const handleChipSelect = (value: string) => {
-    if (isLoading) return;
-    sendMessage(value);
     setInputText('');
   };
 
@@ -157,15 +150,6 @@ export function KioskChatStream() {
 
           <div ref={messagesEndRef} />
         </div>
-
-        {/* Smart response chips */}
-        {!isLoading && currentQuestion && (
-          <SmartResponseChips
-            question={currentQuestion}
-            targetField={targetField}
-            onSelect={handleChipSelect}
-          />
-        )}
 
         {/* Input bar */}
         <div className="border-t border-clinical-muted bg-white px-4 py-4">
